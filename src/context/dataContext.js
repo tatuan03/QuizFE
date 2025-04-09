@@ -2,97 +2,70 @@ import { createContext, useState, useEffect } from "react";
 
 const DataContext = createContext({});
 
-export const DataProvider = ({children}) => {
-      // All Quizs, Current Question, Index of Current Question, Answer, Selected Answer, Total Marks
+export const DataProvider = ({ children }) => {
   const [quizs, setQuizs] = useState([]);
-  const [question, setQuesion] = useState({});
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [correctAnswer, setCorrectAnswer] = useState('');
-  const [selectedAnswer, setSelectedAnswer] = useState('');
   const [marks, setMarks] = useState(0);
-
-  // Display Controlling States
   const [showStart, setShowStart] = useState(true);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [testLevel, setTestLevel] = useState(null); // Level của bài test
 
-  // Load JSON Data
+  // Fetch dữ liệu từ API theo level được chọn
   useEffect(() => {
-    fetch('quiz.json')
-      .then(res => res.json())
-      .then(data => setQuizs(data))
-  }, []);
-
-  // Set a Single Question
-  useEffect(() => {
-    if (quizs.length > questionIndex) {
-      setQuesion(quizs[questionIndex]);
+    if (testLevel != null) {
+      fetch(`http://localhost:9192/api/test/${testLevel}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.questions) {
+            setQuizs(data.questions);
+          }
+        })
+        .catch((error) => console.error("Error fetching quiz data:", error));
     }
-  }, [quizs, questionIndex])
+  }, [testLevel]);
 
-  // Start Quiz
-  const startQuiz = () => {
+  // Chọn level và bắt đầu quiz
+  const startQuiz = (level) => {
+    setTestLevel(level);
     setShowStart(false);
     setShowQuiz(true);
-  }
+    setShowResult(false); // Reset lại trạng thái kết quả khi bắt đầu
+  };
 
-  // Check Answer
-  const checkAnswer = (event, selected) => {
-    if (!selectedAnswer) {
-      setCorrectAnswer(question.answer);
-      setSelectedAnswer(selected);
-
-      if (selected === question.answer) {
-        event.target.classList.add('bg-success');
-        setMarks(marks + 5);
-      } else {
-        event.target.classList.add('bg-danger');
-      }
-    }
-  }
-
-  // Next Quesion
-  const nextQuestion = () => {
-    setCorrectAnswer('');
-    setSelectedAnswer('');
-    const wrongBtn = document.querySelector('button.bg-danger');
-    wrongBtn?.classList.remove('bg-danger');
-    const rightBtn = document.querySelector('button.bg-success');
-    rightBtn?.classList.remove('bg-success');
-    setQuestionIndex(questionIndex + 1);
-  }
-
-  // Show Result
+  // Hiển thị kết quả
   const showTheResult = () => {
     setShowResult(true);
-    setShowStart(false);
     setShowQuiz(false);
-  }
+  };
 
-  // Start Over
   const startOver = () => {
-    setShowStart(false);
+    setShowStart(true);
+    setShowQuiz(false);
     setShowResult(false);
-    setShowQuiz(true);
-    setCorrectAnswer('');
-    setSelectedAnswer('');
-    setQuestionIndex(0);
     setMarks(0);
-    const wrongBtn = document.querySelector('button.bg-danger');
-    wrongBtn?.classList.remove('bg-danger');
-    const rightBtn = document.querySelector('button.bg-success');
-    rightBtn?.classList.remove('bg-success');
-  }
-    return (
-        <DataContext.Provider value={{
-            startQuiz,showStart,showQuiz,question,quizs,checkAnswer,correctAnswer,
-            selectedAnswer,questionIndex,nextQuestion,showTheResult,showResult,marks,
-            startOver
-        }} >
-            {children}
-        </DataContext.Provider>
-    );
-}
+    setTestLevel(null);
+  };
+
+  return (
+    <DataContext.Provider
+      value={{
+        startQuiz,
+        showStart,
+        showQuiz,
+        quizs,
+        marks,
+        setMarks, // 👈 Thêm setMarks vào để sử dụng trong Quiz.js
+        showResult,
+        startOver,
+        setShowStart,
+        setShowQuiz,
+        setShowResult,
+        showTheResult
+      }}
+    >
+      {children}
+    </DataContext.Provider>
+  );
+};
 
 export default DataContext;
-
