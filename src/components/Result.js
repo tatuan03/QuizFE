@@ -17,12 +17,6 @@ const Result = ({ goHome }) => {
         setShowResult(false);
     };
 
-    const handleGoHome = () => {
-        if (goHome) goHome();
-        setShowResult(false);
-        setShowStart(false);
-    };
-
     return (
         <section
             className="bg-dark text-white vh-100 d-flex align-items-center justify-content-center"
